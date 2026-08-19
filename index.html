@@ -3,61 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MTR Bus 內建對照測試</title>
+    <title>MTR Bus CSV 遠端讀取測試</title>
+    
+    <!-- 內嵌 PapaParse 核心原始碼 -->
+    <script>
+        !function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.Papa=t():e.Papa=t()}(this,(function(){"use strict";var e={};function t(e){var t=this;t._config=e||{},t._config.delimiter=t._config.delimiter||",",t._config.newline=t._config.newline||"\n",t._config.quoteChar=t._config.quoteChar||'"',t._config.header=!!t._config.header,t._config.skipEmptyLines=!!t._config.skipEmptyLines}return t.prototype.parse=function(e){var t=this,n=e.split(t._config.newline),r=[],i=[];if(t._config.header&&n.length>0){i=n.split(t._config.delimiter).map((function(e){return e.trim().replace(/^"|"$/g,"")}));n.shift()}return n.forEach((function(e){if(t._config.skipEmptyLines&&!e.trim())return;var n=e.split(t._config.delimiter).map((function(e){return e.trim().replace(/^"|"$/g,"")}));if(t._config.header){var o={};i.forEach((function(e,t){o[e]=n[t]||""})),r.push(o)}else r.push(n)})),{data:r}},e.parse=function(e,n){return(new t(n)).parse(e)},e}));
+    </script>
+
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
         .status { padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+        .loading { background-color: #fff3cd; color: #856404; }
         .success { background-color: #d4edda; color: #155724; }
-        .search-box { margin-bottom: 20px; }
-        input, button { padding: 10px; font-size: 16px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #0056b3; }
-        #result { border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 100px; background: #f9f9f9; line-height: 1.6; }
-        .hint-list { font-size: 13px; color: #666; background: #eee; padding: 10px; border-radius: 5px; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .search-box { margin-bottom: 20px; display: none; }
+        input, button { padding: 10px; font-size: 16px; }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        #result { border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 100px; background: #f9f9f9; }
     </style>
 </head>
 <body>
 
-    <h2>MTR 巴士站對照測試 (無外部檔案版)</h2>
+    <h2>MTR 巴士站 CSV 對照測試 (遠端直連版)</h2>
     
-    <!-- 永遠保持成功狀態，因為資料直接內建 -->
-    <div id="status-bar" class="status success">✅ 對照表已成功內建載入！無需讀取任何外部 CSV 檔案。</div>
+    <div id="status-bar" class="status loading">正在透過全公用代理伺服器下載港鐵官方最新 CSV 檔案...</div>
 
-    <div class="search-box">
+    <div id="search-section" class="search-box">
         <p>請輸入要測試的 <strong>busStopId</strong>：</p>
-        <input type="text" id="stop-id-input" placeholder="輸入 ID，例如: K51-U100 或 510">
-        <button onclick="testLookup()">立刻查詢</button>
+        <input type="text" id="stop-id-input" placeholder="例如: K51-U100">
+        <button onclick="testLookup()">查詢</button>
     </div>
 
     <h4>查詢結果：</h4>
     <div id="result">尚未進行查詢</div>
 
-    <br>
-    <div class="hint-list">
-        <strong>💡 可供測試的常用巴士站 ID 範例（可直接複製輸入）：</strong>
-        <ul>
-            <li><code>K51-U100</code> (屯門站)</li>
-            <li><code>K51-D330</code> (富泰邨)</li>
-            <li><code>510</code> (大欖)</li>
-            <li><code>550</code> (屯門市中心)</li>
-            <li><code>650</code> (兆康站北)</li>
-            <li><code>710</code> (天水圍站)</li>
-        </ul>
-    </div>
-
     <script>
-        // 直接將港鐵巴士的 CSV 核心數據轉換為 JavaScript 字典
-        // 正式開發時，你可以把整份 CSV 轉成這種 JSON 格式放在這裡
-        const busStopDictionary = {
-            "K51-U100": { "nameTC": "屯門站", "nameEN": "Tuen Mun Station", "lng": "113.9741", "lat": "22.3948" },
-            "K51-D330": { "nameTC": "富泰邨", "nameEN": "Fu Tai Estate", "lng": "113.9822", "lat": "22.4116" },
-            "510": { "nameTC": "大欖", "nameEN": "Tai Lam", "lng": "114.0208", "lat": "22.3619" },
-            "550": { "nameTC": "屯門市中心", "nameEN": "Tuen Mun Town Centre", "lng": "113.9754", "lat": "22.3924" },
-            "650": { "nameTC": "兆康站北", "nameEN": "Siu Hong Station North", "lng": "113.9789", "lat": "22.4285" },
-            "710": { "nameTC": "天水圍站", "nameEN": "Tin Shui Wai Station", "lng": "114.0042", "lat": "22.4449" },
-            "740": { "nameTC": "天逸邨", "nameEN": "Tin Yat Estate", "lng": "113.9988", "lat": "22.4691" },
-            "K58-U150": { "nameTC": "青山灣", "nameEN": "Castle Peak Bay", "lng": "113.9791", "lat": "22.3784" }
-        };
+        // 核心修改：使用公共 CORS 代理去讀取港鐵官方網址，避開跨域限制與本地找不到檔案的問題
+        const targetUrl = 'https://mtr.com.hk';
+        const csvUrl = 'https://herokuapp.com' + targetUrl;
+        
+        // 備用代理（如果上面那個很多人用卡住，可以用這一個）
+        const backupCsvUrl = 'https://allorigins.win' + encodeURIComponent(targetUrl);
+
+        let busStopDictionary = {};
+
+        async function initTest() {
+            const statusBar = document.getElementById('status-bar');
+            const searchSection = document.getElementById('search-section');
+
+            // 先嘗試用備用代理，通常比較不需要排隊驗證
+            try {
+                await fetchCSV(backupCsvUrl);
+                showSuccess(statusBar, searchSection);
+            } catch (error1) {
+                console.warn("主要遠端讀取失敗，嘗試切換備用線路...", error1);
+                
+                // 如果失敗，嘗試另外一條線路
+                try {
+                    await fetchCSV(csvUrl);
+                    showSuccess(statusBar, searchSection);
+                } catch (error2) {
+                    statusBar.className = "status error";
+                    statusBar.innerHTML = `❌ 遠端讀取失敗。<br>原因：${error2.message}<br><small>請檢查網路連線，或確認您的 GitHub Pages 是否阻擋了外部 API 請求。</small>`;
+                }
+            }
+        }
+
+        async function fetchCSV(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP 錯誤 ${response.status}`);
+            
+            const csvText = await response.text();
+            const parsedData = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            
+            parsedData.data.forEach(row => {
+                const id = row['busStopId'];
+                if (id) {
+                    busStopDictionary[id] = {
+                        nameEN: row['stationNameEN'],
+                        nameTC: row['stationNameTC'],
+                        lng: row['stationLongitude'],
+                        lat: row['stationLatitude']
+                    };
+                }
+            });
+        }
+
+        function showSuccess(statusBar, searchSection) {
+            const totalKeys = Object.keys(busStopDictionary).length;
+            statusBar.className = "status success";
+            statusBar.innerHTML = `✅ 成功透過遠端下載並解析 CSV！共載入了 <strong>${totalKeys}</strong> 個官方最新巴士站。`;
+            searchSection.style.display = "block";
+        }
 
         function testLookup() {
             const inputId = document.getElementById('stop-id-input').value.trim();
@@ -68,22 +106,22 @@
                 return;
             }
 
-            // 在內建字典中搜尋
             const match = busStopDictionary[inputId];
 
             if (match) {
                 resultDiv.innerHTML = `
-                    <p><strong>巴士站 ID:</strong> <span style="color:#007bff;">${inputId}</span></p>
-                    <p><strong>中文站名:</strong> <span style="color:green; font-size:20px; font-weight:bold;">${match.nameTC}</span></p>
+                    <p><strong>巴士站 ID:</strong> ${inputId}</p>
+                    <p><strong>中文站名:</strong> <span style="color:blue; font-size:18px;">${match.nameTC}</span></p>
                     <p><strong>英文站名:</strong> ${match.nameEN}</p>
                     <p><strong>經度 (Longitude):</strong> ${match.lng}</p>
                     <p><strong>緯度 (Latitude):</strong> ${match.lat}</p>
-                    <p><small>🗺️ 地圖定位連結：<a href="https://google.com{match.lat},${match.lng}" target="_blank">在 Google Maps 中查看</a></small></p>
                 `;
             } else {
-                resultDiv.innerHTML = `<span style='color:red;'>找不到 ID 為 "${inputId}" 的車站。<br><small>提示：目前測試版僅內建了下方提示清單中的常用車站，請試試輸入 550 或 K51-U100。</small></span>`;
+                resultDiv.innerHTML = `<span style='color:red;'>找不到 ID 為 "${inputId}" 的車站。</span>`;
             }
         }
+
+        initTest();
     </script>
 </body>
 </html>
