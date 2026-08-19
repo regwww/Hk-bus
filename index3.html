@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTR Bus CSV 遠端讀取測試</title>
+    
+    <!-- 內嵌 PapaParse 核心原始碼 -->
+    <script>
+        !function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.Papa=t():e.Papa=t()}(this,(function(){"use strict";var e={};function t(e){var t=this;t._config=e||{},t._config.delimiter=t._config.delimiter||",",t._config.newline=t._config.newline||"\n",t._config.quoteChar=t._config.quoteChar||'"',t._config.header=!!t._config.header,t._config.skipEmptyLines=!!t._config.skipEmptyLines}return t.prototype.parse=function(e){var t=this,n=e.split(t._config.newline),r=[],i=[];if(t._config.header&&n.length>0){i=n.split(t._config.delimiter).map((function(e){return e.trim().replace(/^"|"$/g,"")}));n.shift()}return n.forEach((function(e){if(t._config.skipEmptyLines&&!e.trim())return;var n=e.split(t._config.delimiter).map((function(e){return e.trim().replace(/^"|"$/g,"")}));if(t._config.header){var o={};i.forEach((function(e,t){o[e]=n[t]||""})),r.push(o)}else r.push(n)})),{data:r}},e.parse=function(e,n){return(new t(n)).parse(e)},e}));
+    </script>
+
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .status { padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+        .loading { background-color: #fff3cd; color: #856404; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .search-box { margin-bottom: 20px; display: none; }
+        input, button { padding: 10px; font-size: 16px; }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        #result { border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 100px; background: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+    <h2>MTR 巴士站 CSV 對照測試 (遠端直連版)</h2>
+    
+    <div id="status-bar" class="status loading">正在透過全公用代理伺服器下載港鐵官方最新 CSV 檔案...</div>
+
+    <div id="search-section" class="search-box">
+        <p>請輸入要測試的 <strong>busStopId</strong>：</p>
+        <input type="text" id="stop-id-input" placeholder="例如: K51-U100">
+        <button onclick="testLookup()">查詢</button>
+    </div>
+
+    <h4>查詢結果：</h4>
+    <div id="result">尚未進行查詢</div>
+
+    <script>
+        // 核心修改：使用公共 CORS 代理去讀取港鐵官方網址，避開跨域限制與本地找不到檔案的問題
+        const targetUrl = 'https://mtr.com.hk';
+        const csvUrl = 'https://herokuapp.com' + targetUrl;
+        
+        // 備用代理（如果上面那個很多人用卡住，可以用這一個）
+        const backupCsvUrl = 'https://allorigins.win' + encodeURIComponent(targetUrl);
+
+        let busStopDictionary = {};
+
+        async function initTest() {
+            const statusBar = document.getElementById('status-bar');
+            const searchSection = document.getElementById('search-section');
+
+            // 先嘗試用備用代理，通常比較不需要排隊驗證
+            try {
+                await fetchCSV(backupCsvUrl);
+                showSuccess(statusBar, searchSection);
+            } catch (error1) {
+                console.warn("主要遠端讀取失敗，嘗試切換備用線路...", error1);
+                
+                // 如果失敗，嘗試另外一條線路
+                try {
+                    await fetchCSV(csvUrl);
+                    showSuccess(statusBar, searchSection);
+                } catch (error2) {
+                    statusBar.className = "status error";
+                    statusBar.innerHTML = `❌ 遠端讀取失敗。<br>原因：${error2.message}<br><small>請檢查網路連線，或確認您的 GitHub Pages 是否阻擋了外部 API 請求。</small>`;
+                }
+            }
+        }
+
+        async function fetchCSV(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP 錯誤 ${response.status}`);
+            
+            const csvText = await response.text();
+            const parsedData = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            
+            parsedData.data.forEach(row => {
+                const id = row['busStopId'];
+                if (id) {
+                    busStopDictionary[id] = {
+                        nameEN: row['stationNameEN'],
+                        nameTC: row['stationNameTC'],
+                        lng: row['stationLongitude'],
+                        lat: row['stationLatitude']
+                    };
+                }
+            });
+        }
+
+        function showSuccess(statusBar, searchSection) {
+            const totalKeys = Object.keys(busStopDictionary).length;
+            statusBar.className = "status success";
+            statusBar.innerHTML = `✅ 成功透過遠端下載並解析 CSV！共載入了 <strong>${totalKeys}</strong> 個官方最新巴士站。`;
+            searchSection.style.display = "block";
+        }
+
+        function testLookup() {
+            const inputId = document.getElementById('stop-id-input').value.trim();
+            const resultDiv = document.getElementById('result');
+
+            if (!inputId) {
+                resultDiv.innerHTML = "<span style='color:red;'>請輸入 busStopId！</span>";
+                return;
+            }
+
+            const match = busStopDictionary[inputId];
+
+            if (match) {
+                resultDiv.innerHTML = `
+                    <p><strong>巴士站 ID:</strong> ${inputId}</p>
+                    <p><strong>中文站名:</strong> <span style="color:blue; font-size:18px;">${match.nameTC}</span></p>
+                    <p><strong>英文站名:</strong> ${match.nameEN}</p>
+                    <p><strong>經度 (Longitude):</strong> ${match.lng}</p>
+                    <p><strong>緯度 (Latitude):</strong> ${match.lat}</p>
+                `;
+            } else {
+                resultDiv.innerHTML = `<span style='color:red;'>找不到 ID 為 "${inputId}" 的車站。</span>`;
+            }
+        }
+
+        initTest();
+    </script>
+</body>
+</html>
