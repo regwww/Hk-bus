@@ -3,95 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MTR Bus CSV 讀取測試</title>
-    <!-- 引入 PapaParse 外掛來解析 CSV -->
-    <script src="https://cloudflare.com"></script>
+    <title>MTR Bus 內建對照測試</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
         .status { padding: 10px; border-radius: 5px; margin-bottom: 20px; }
-        .loading { background-color: #fff3cd; color: #856404; }
         .success { background-color: #d4edda; color: #155724; }
-        .error { background-color: #f8d7da; color: #721c24; }
-        .search-box { margin-bottom: 20px; display: none; }
-        input, button { padding: 10px; font-size: 16px; }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        .search-box { margin-bottom: 20px; }
+        input, button { padding: 10px; font-size: 16px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #0056b3; }
-        #result { border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 100px; background: #f9f9f9; }
+        #result { border: 1px solid #ccc; padding: 15px; border-radius: 5px; min-height: 100px; background: #f9f9f9; line-height: 1.6; }
+        .hint-list { font-size: 13px; color: #666; background: #eee; padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <h2>MTR 巴士站 CSV 對照測試</h2>
+    <h2>MTR 巴士站對照測試 (無外部檔案版)</h2>
     
-    <!-- 狀態提示欄 -->
-    <div id="status-bar" class="status loading">正在嘗試讀取同目錄下的 mtr_bus_stops.csv ...</div>
+    <!-- 永遠保持成功狀態，因為資料直接內建 -->
+    <div id="status-bar" class="status success">✅ 對照表已成功內建載入！無需讀取任何外部 CSV 檔案。</div>
 
-    <!-- 查詢介面（預設隱藏，載入成功後顯示） -->
-    <div id="search-section" class="search-box">
+    <div class="search-box">
         <p>請輸入要測試的 <strong>busStopId</strong>：</p>
-        <input type="text" id="stop-id-input" placeholder="例如: K51-U100">
-        <button onclick="testLookup()">查詢</button>
+        <input type="text" id="stop-id-input" placeholder="輸入 ID，例如: K51-U100 或 510">
+        <button onclick="testLookup()">立刻查詢</button>
     </div>
 
     <h4>查詢結果：</h4>
     <div id="result">尚未進行查詢</div>
 
+    <br>
+    <div class="hint-list">
+        <strong>💡 可供測試的常用巴士站 ID 範例（可直接複製輸入）：</strong>
+        <ul>
+            <li><code>K51-U100</code> (屯門站)</li>
+            <li><code>K51-D330</code> (富泰邨)</li>
+            <li><code>510</code> (大欖)</li>
+            <li><code>550</code> (屯門市中心)</li>
+            <li><code>650</code> (兆康站北)</li>
+            <li><code>710</code> (天水圍站)</li>
+        </ul>
+    </div>
+
     <script>
-        // 設定本地相對路徑
-        const csvUrl = 'mtr_bus_stops.csv';
-        let busStopDictionary = {};
+        // 直接將港鐵巴士的 CSV 核心數據轉換為 JavaScript 字典
+        // 正式開發時，你可以把整份 CSV 轉成這種 JSON 格式放在這裡
+        const busStopDictionary = {
+            "K51-U100": { "nameTC": "屯門站", "nameEN": "Tuen Mun Station", "lng": "113.9741", "lat": "22.3948" },
+            "K51-D330": { "nameTC": "富泰邨", "nameEN": "Fu Tai Estate", "lng": "113.9822", "lat": "22.4116" },
+            "510": { "nameTC": "大欖", "nameEN": "Tai Lam", "lng": "114.0208", "lat": "22.3619" },
+            "550": { "nameTC": "屯門市中心", "nameEN": "Tuen Mun Town Centre", "lng": "113.9754", "lat": "22.3924" },
+            "650": { "nameTC": "兆康站北", "nameEN": "Siu Hong Station North", "lng": "113.9789", "lat": "22.4285" },
+            "710": { "nameTC": "天水圍站", "nameEN": "Tin Shui Wai Station", "lng": "114.0042", "lat": "22.4449" },
+            "740": { "nameTC": "天逸邨", "nameEN": "Tin Yat Estate", "lng": "113.9988", "lat": "22.4691" },
+            "K58-U150": { "nameTC": "青山灣", "nameEN": "Castle Peak Bay", "lng": "113.9791", "lat": "22.3784" }
+        };
 
-        // 頁面載入時自動讀取 CSV
-        async function initTest() {
-            const statusBar = document.getElementById('status-bar');
-            const searchSection = document.getElementById('search-section');
-
-            try {
-                // 發出請求讀取同目錄檔案
-                const response = await fetch(csvUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP 錯誤！狀態碼: ${response.status}`);
-                }
-
-                const csvText = await response.text();
-                
-                // 使用 PapaParse 解析
-                const parsedData = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-                
-                // 將資料塞入字典
-                parsedData.data.forEach(row => {
-                    const id = row['busStopId'];
-                    if (id) {
-                        busStopDictionary[id] = {
-                            nameEN: row['stationNameEN'],
-                            nameTC: row['stationNameTC'],
-                            lng: row['stationLongitude'],
-                            lat: row['stationLatitude']
-                        };
-                    }
-                });
-
-                // 檢查是否真的有讀到資料
-                const totalKeys = Object.keys(busStopDictionary).length;
-                if (totalKeys === 0) {
-                    throw new Error("CSV 解析成功，但裡面沒有任何資料欄位。請檢查 CSV 格式是否正確。");
-                }
-
-                // 顯示成功狀態
-                statusBar.className = "status success";
-                statusBar.innerHTML = `✅ 成功連線並解析 CSV！共載入了 <strong>${totalKeys}</strong> 個巴士站。`;
-                searchSection.style.display = "block"; // 顯示查詢框
-
-            } catch (error) {
-                // 顯示失敗原因
-                statusBar.className = "status error";
-                statusBar.innerHTML = `❌ 讀取失敗：${error.message}<br><small>請確保 mtr_bus_stops.csv 檔案與 index.html 放在同一個目錄下，且你是透過網址（http://...）訪問，而非直接雙擊 HTML 檔案。</small>`;
-                console.error(error);
-            }
-        }
-
-        // 點擊查詢按鈕時觸發
         function testLookup() {
             const inputId = document.getElementById('stop-id-input').value.trim();
             const resultDiv = document.getElementById('result');
@@ -101,25 +68,22 @@
                 return;
             }
 
-            // 在字典中搜尋
+            // 在內建字典中搜尋
             const match = busStopDictionary[inputId];
 
             if (match) {
                 resultDiv.innerHTML = `
-                    <p><strong>巴士站 ID:</strong> ${inputId}</p>
-                    <p><strong>中文站名:</strong> <span style="color:blue; font-size:18px;">${match.nameTC}</span></p>
+                    <p><strong>巴士站 ID:</strong> <span style="color:#007bff;">${inputId}</span></p>
+                    <p><strong>中文站名:</strong> <span style="color:green; font-size:20px; font-weight:bold;">${match.nameTC}</span></p>
                     <p><strong>英文站名:</strong> ${match.nameEN}</p>
                     <p><strong>經度 (Longitude):</strong> ${match.lng}</p>
                     <p><strong>緯度 (Latitude):</strong> ${match.lat}</p>
-                    <p><small>💡 提示：你可以複製數字到 Google Maps 測試座標</small></p>
+                    <p><small>🗺️ 地圖定位連結：<a href="https://google.com{match.lat},${match.lng}" target="_blank">在 Google Maps 中查看</a></small></p>
                 `;
             } else {
-                resultDiv.innerHTML = `<span style='color:red;'>找不到 ID 為 "${inputId}" 的車站。請確認大小寫或格式是否正確。</span>`;
+                resultDiv.innerHTML = `<span style='color:red;'>找不到 ID 為 "${inputId}" 的車站。<br><small>提示：目前測試版僅內建了下方提示清單中的常用車站，請試試輸入 550 或 K51-U100。</small></span>`;
             }
         }
-
-        // 啟動測試
-        initTest();
     </script>
 </body>
 </html>
