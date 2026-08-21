@@ -261,7 +261,11 @@
             <button class="tab-btn" id="tab-train" onclick="switchMode('train')">港鐵 MTR</button>
             <button type="button" class="tab-btn" id="tab-favorites" onclick="switchMode('favorites')">常用車站</button>
         </div>
+<button type="button" onclick="checkPanels()">
+  檢查 Panels
+</button>
 
+<pre id="debugOutput"></pre>
         <!-- 1. 輕鐵選單 (預設景峰站 330) -->
         <div id="panel-lrt">
             <label for="lrtStation">選擇輕鐵車站：</label>
