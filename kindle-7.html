@@ -252,11 +252,9 @@
             <button class="tab-btn" id="tab-mtrbus" onclick="switchMode('mtrbus')">港鐵巴士</button>
             <button class="tab-btn" id="tab-kmb" onclick="switchMode('kmb')">九巴 KMB</button>
             <button class="tab-btn" id="tab-train" onclick="switchMode('train')">港鐵 MTR</button>
+            <button class="tab-btn" id="tab-favorites" type="button" onclick="switchMode('favorites')">常用車站</button>
         </div>
-<button type="button"
-onclick="alert('panel-favorites=' + document.querySelectorAll('#panel-favorites').length)">
-檢查
-</button>
+
         <!-- 1. 輕鐵選單 (預設景峰站 330) -->
         <div id="panel-lrt">
             <label for="lrtStation">選擇輕鐵車站：</label>
@@ -332,6 +330,18 @@ onclick="alert('panel-favorites=' + document.querySelectorAll('#panel-favorites'
             </select>
         </div>
 
+<div id="panel-favorites" style="display:none;">
+    <div class="header-title">常用車站</div>
+    <div id="favoritesPanelList">
+        <div class="status-msg">
+            尚未添加常用車站。
+        </div>
+    </div>
+</div>
+
+
+        
+        
         <!-- 2. 港鐵巴士選單 -->
         <div id="panel-mtrbus" style="display:none;">
             <label for="mtrRoute">選擇港鐵巴士路線：</label>
