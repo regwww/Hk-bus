@@ -509,7 +509,14 @@
         var mtrBusStopIndex = new Map();         // 複合索引 Map<REFERENCE_ID|STATION_ID, Row>
         var mtrBusStopsByStationId = new Map();  // 多值索引 Map<STATION_ID, Array<Row>>
         var mtrBusStopRows = [];                 // CSV 全部 Rows
+//
+        var favoritesPanel = document.getElementById('panel-favorites');
 
+if (favoritesPanel) {
+    favoritesPanel.style.display =
+        mode === 'favorites' ? 'block' : 'none';
+}
+        //
         // HTML 字串轉義
         function escapeHTML(str) {
             if (str === null || str === undefined) return '';
