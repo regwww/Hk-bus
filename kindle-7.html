@@ -2019,14 +2019,14 @@
         }
     };
 })(); */
-        </script>
-
-    <button onclick="checkPanels()">檢查 Panels</button>
-<pre id="debugOutput"></pre>
-
-<script>
-function checkPanels() {
-    const ids = [
+       
+    function checkPanels() {
+    var ids = [
+        'tab-lrt',
+        'tab-mtrbus',
+        'tab-kmb',
+        'tab-train',
+        'tab-favorites',
         'panel-lrt',
         'panel-mtrbus',
         'panel-kmb',
@@ -2034,15 +2034,24 @@ function checkPanels() {
         'panel-favorites'
     ];
 
-    const result = ids.map(function (id) {
+    var result = ids.map(function (id) {
         return id + ': ' +
             document.querySelectorAll('#' + id).length;
     });
 
-    document.getElementById('debugOutput').textContent =
-        result.join('
+    var output = document.getElementById('debugOutput');
+
+    if (output) {
+        output.textContent = result.join('
 ');
-}
-</script>
+    } else {
+        alert(result.join('
+'));
+    }
+    }
+    
+    </script>
+
+  
 </body>
 </html>
