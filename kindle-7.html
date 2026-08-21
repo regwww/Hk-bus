@@ -1969,7 +1969,7 @@
                 overlay.style.display = 'none';
             }, 400);
         }
-   (function () {
+  /* (function () {
     const modeNames = ['lrt', 'mtrbus', 'kmb', 'train', 'favorites'];
 
     window.switchMode = function (mode) {
@@ -2014,6 +2014,29 @@
             window.fetchETA();
         }
     };
-})(); </script>
+})(); */
+    <button onclick="checkPanels()">檢查 Panels</button>
+<pre id="debugOutput"></pre>
+
+<script>
+function checkPanels() {
+    const ids = [
+        'panel-lrt',
+        'panel-mtrbus',
+        'panel-kmb',
+        'panel-train',
+        'panel-favorites'
+    ];
+
+    const result = ids.map(function (id) {
+        return id + ': ' +
+            document.querySelectorAll('#' + id).length;
+    });
+
+    document.getElementById('debugOutput').textContent =
+        result.join('
+');
+}
+</script></script>
 </body>
 </html>
