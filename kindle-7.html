@@ -252,6 +252,13 @@
             <button class="tab-btn" id="tab-mtrbus" onclick="switchMode('mtrbus')">港鐵巴士</button>
             <button class="tab-btn" id="tab-kmb" onclick="switchMode('kmb')">九巴 KMB</button>
             <button class="tab-btn" id="tab-train" onclick="switchMode('train')">港鐵 MTR</button>
+        <button type="button" onclick="checkPanels()">
+  檢查 Panels
+</button>
+
+<pre id="debugOutput"
+     style="white-space:pre-wrap;border:2px solid #000;padding:8px;">
+</pre>
         </div>
 
         <!-- 1. 輕鐵選單 (預設景峰站 330) -->
@@ -1905,6 +1912,39 @@
                 overlay.style.display = 'none';
             }, 400);
         }
+    function checkPanels() {
+    var ids = [
+        'tab-lrt',
+        'tab-mtrbus',
+        'tab-kmb',
+        'tab-train',
+        'tab-favorites',
+        'panel-lrt',
+        'panel-mtrbus',
+        'panel-kmb',
+        'panel-train',
+        'panel-favorites'
+    ];
+
+    var lines = [];
+
+    ids.forEach(function (id) {
+        lines.push(
+            id + ': ' +
+            document.querySelectorAll('#' + id).length
+        );
+    });
+
+    var output = document.getElementById('debugOutput');
+
+    if (output) {
+        output.textContent = lines.join('
+');
+    } else {
+        alert(lines.join('
+'));
+    }
+    }
     </script>
 </body>
 </html>
