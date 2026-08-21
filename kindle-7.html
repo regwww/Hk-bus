@@ -265,11 +265,9 @@
   檢查 Panels
 </button>
 
-<pre id="debugOutput"></pre>
-        <button type="button"
-        onclick="alert('JavaScript 正常執行')">
-  測試 JavaScript
-        </button>
+<pre id="debugOutput"
+     style="white-space:pre-wrap;border:2px solid #000;padding:8px;">
+</pre>
         <!-- 1. 輕鐵選單 (預設景峰站 330) -->
         <div id="panel-lrt">
             <label for="lrtStation">選擇輕鐵車站：</label>
@@ -2024,7 +2022,7 @@
     };
 })(); */
        
-    function checkPanels() {
+function checkPanels() {
     var ids = [
         'tab-lrt',
         'tab-mtrbus',
@@ -2038,21 +2036,25 @@
         'panel-favorites'
     ];
 
-    var result = ids.map(function (id) {
-        return id + ': ' +
-            document.querySelectorAll('#' + id).length;
+    var lines = [];
+
+    ids.forEach(function (id) {
+        lines.push(
+            id + ': ' +
+            document.querySelectorAll('#' + id).length
+        );
     });
 
     var output = document.getElementById('debugOutput');
 
     if (output) {
-        output.textContent = result.join('
+        output.textContent = lines.join('
 ');
     } else {
-        alert(result.join('
+        alert(lines.join('
 '));
     }
-    }
+}
     
     </script>
 
