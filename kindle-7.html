@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kindle 輕鐵及全港交通看板</title>
     <style>
+        
+        window.addEventListener('load', function () {
+    alert(
+        'panel-favorites 數量：' +
+        document.querySelectorAll('#panel-favorites').length
+    );
+});
         /* 專為 E-Ink (Kindle / Kobo / Onyx) 電子墨水屏設計的高對比純黑白樣式 */
         :root {
             --bg-color: #ffffff;
