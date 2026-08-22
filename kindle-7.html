@@ -1343,46 +1343,59 @@
         }
 
         function switchMode(mode) {
-    currentMode = mode;
+    var panelIds = [
+        'panel-lrt',
+        'panel-mtrbus',
+        'panel-kmb',
+        'panel-train',
+        'panel-favorites'
+    ];
 
-    document.getElementById('panel-lrt').style.display =
-        mode === 'lrt' ? 'block' : 'none';
+    var tabIds = [
+        'tab-lrt',
+        'tab-mtrbus',
+        'tab-kmb',
+        'tab-train',
+        'tab-favorites'
+    ];
 
-    document.getElementById('panel-mtrbus').style.display =
-        mode === 'mtrbus' ? 'block' : 'none';
+    panelIds.forEach(function (id) {
+        var panel = document.getElementById(id);
 
-    document.getElementById('panel-kmb').style.display =
-        mode === 'kmb' ? 'block' : 'none';
+        if (panel) {
+            panel.style.display = 'none';
+        }
+    });
 
-    document.getElementById('panel-train').style.display =
-        mode === 'train' ? 'block' : 'none';
+    tabIds.forEach(function (id) {
+        var tab = document.getElementById(id);
 
-    var favoritesPanel =
-        document.getElementById('panel-favorites');
+        if (tab) {
+            tab.className = 'tab-btn';
+        }
+    });
 
-    if (favoritesPanel) {
-        favoritesPanel.style.display =
-            mode === 'favorites' ? 'block' : 'none';
+    var activePanel =
+        document.getElementById('panel-' + mode);
+
+    if (activePanel) {
+        activePanel.style.display = 'block';
     }
 
-    document.getElementById('tab-lrt').className =
-        mode === 'lrt' ? 'tab-btn active' : 'tab-btn';
+    var activeTab =
+        document.getElementById('tab-' + mode);
 
-    document.getElementById('tab-mtrbus').className =
-        mode === 'mtrbus' ? 'tab-btn active' : 'tab-btn';
+    if (activeTab) {
+        activeTab.className = 'tab-btn active';
+    }
 
-    document.getElementById('tab-kmb').className =
-        mode === 'kmb' ? 'tab-btn active' : 'tab-btn';
+    currentMode = mode;
 
-    document.getElementById('tab-train').className =
-        mode === 'train' ? 'tab-btn active' : 'tab-btn';
-
-    var favoritesTab =
-        document.getElementById('tab-favorites');
-
-    if (favoritesTab) {
-        favoritesTab.className =
-            mode === 'favorites' ? 'tab-btn active' : 'tab-btn';
+    if (mode === 'favorites') {
+        if (typeof renderFavorites === 'function') {
+            renderFavorites();
+        }
+        return;
     }
 
     if (mode === 'train') {
@@ -1390,15 +1403,13 @@
     } else if (mode === 'mtrbus') {
         onMtrRouteChanged();
     } else if (mode === 'kmb') {
-        if (document.getElementById('kmbStop').options.length === 0) {
+        var stop = document.getElementById('kmbStop');
+
+        if (stop && stop.options.length === 0) {
             loadKmbStops();
         }
     } else if (mode === 'lrt') {
         fetchETA();
-    } else if (mode === 'favorites') {
-        if (typeof renderFavorites === 'function') {
-            renderFavorites();
-        }
     }
         }
 
