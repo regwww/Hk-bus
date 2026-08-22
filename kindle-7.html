@@ -1343,53 +1343,49 @@
         }
 
         function switchMode(mode) {
-    var panelIds = [
-        'panel-lrt',
-        'panel-mtrbus',
-        'panel-kmb',
-        'panel-train',
-        'panel-favorites'
+    currentMode = mode;
+
+    var panels = [
+        document.getElementById('panel-lrt'),
+        document.getElementById('panel-mtrbus'),
+        document.getElementById('panel-kmb'),
+        document.getElementById('panel-train'),
+        document.getElementById('panel-favorites')
     ];
 
-    var tabIds = [
-        'tab-lrt',
-        'tab-mtrbus',
-        'tab-kmb',
-        'tab-train',
-        'tab-favorites'
-    ];
-
-    panelIds.forEach(function (id) {
-        var panel = document.getElementById(id);
-
+    panels.forEach(function (panel) {
         if (panel) {
             panel.style.display = 'none';
         }
     });
 
-    tabIds.forEach(function (id) {
-        var tab = document.getElementById(id);
+    var tabs = [
+        document.getElementById('tab-lrt'),
+        document.getElementById('tab-mtrbus'),
+        document.getElementById('tab-kmb'),
+        document.getElementById('tab-train'),
+        document.getElementById('tab-favorites')
+    ];
 
+    tabs.forEach(function (tab) {
         if (tab) {
             tab.className = 'tab-btn';
         }
     });
 
-    var activePanel =
+    var selectedPanel =
         document.getElementById('panel-' + mode);
 
-    if (activePanel) {
-        activePanel.style.display = 'block';
+    if (selectedPanel) {
+        selectedPanel.style.display = 'block';
     }
 
-    var activeTab =
+    var selectedTab =
         document.getElementById('tab-' + mode);
 
-    if (activeTab) {
-        activeTab.className = 'tab-btn active';
+    if (selectedTab) {
+        selectedTab.className = 'tab-btn active';
     }
-
-    currentMode = mode;
 
     if (mode === 'favorites') {
         if (typeof renderFavorites === 'function') {
