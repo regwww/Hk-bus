@@ -330,18 +330,6 @@
             </select>
         </div>
 
-<div id="panel-favorites" style="display:none;">
-    <div class="header-title">常用車站</div>
-    <div id="favoritesPanelList">
-        <div class="status-msg">
-            尚未添加常用車站。
-        </div>
-    </div>
-</div>
-
-
-        
-        
         <!-- 2. 港鐵巴士選單 -->
         <div id="panel-mtrbus" style="display:none;">
             <label for="mtrRoute">選擇港鐵巴士路線：</label>
@@ -412,6 +400,17 @@
             <label for="trainStation">選擇車站：</label>
             <select id="trainStation" onchange="saveAndFetchETA()"></select>
         </div>
+
+        <!-- 常用車站 -->
+        
+        <div id="panel-favorites" style="display:none;">
+    <div class="header-title">常用車站</div>
+    <div id="favoritesPanelList">
+        <div class="status-msg">
+            尚未添加常用車站。
+        </div>
+    </div>
+    </div>
 
         <!-- 操作按鈕列 -->
         <div class="row" style="margin-top: 10px;">
