@@ -2416,5 +2416,315 @@
     }
 })();
 </script>
+<!--p2-->
+    <script>
+(function () {
+  "use strict";
+
+  const PATCH_VERSION = "2026-08-24";
+
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  function hkTime() {
+    return new Intl.DateTimeFormat("zh-HK", {
+      timeZone: "Asia/Hong_Kong",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).format(new Date());
+  }
+
+  function setNetworkStatus(text) {
+    const node = el("networkStatus");
+    if (node) node.textContent = text;
+  }
+
+  function updateLastUpdatedSafe() {
+    const node = el("lastUpdated");
+    if (node) node.textContent = hkTime();
+  }
+
+  function setResult(message, status) {
+    const node = el("etaResult");
+    if (node) node.textContent = message;
+    if (status) setNetworkStatus("狀態: " + status);
+  }
+
+  function jsonFetch(url, options) {
+    return fetch(url, options || {}).then(function (response) {
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      return response.json();
+    });
+  }
+
+  function parseCSV(text) {
+    const rows = [];
+    let row = [];
+    let cell = "";
+    let quoted = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      const next = text[i + 1];
+
+      if (ch === '"' && quoted && next === '"') {
+        cell += '"';
+        i++;
+      } else if (ch === '"') {
+        quoted = !quoted;
+      } else if (ch === "," && !quoted) {
+        row.push(cell);
+        cell = "";
+      } else if ((ch === "
+" || ch === "
+") && !quoted) {
+        if (ch === "
+" && next === "
+") i++;
+        row.push(cell);
+        if (row.some(function (v) { return v.trim() !== ""; })) {
+          rows.push(row);
+        }
+        row = [];
+        cell = "";
+      } else {
+        cell += ch;
+      }
+    }
+
+    if (cell !== "" || row.length) {
+      row.push(cell);
+      rows.push(row);
+    }
+
+    if (!rows.length) return [];
+
+    const headers = rows.shift().map(function (header) {
+      return header.replace(/^﻿/, "").trim();
+    });
+
+    return rows.map(function (values) {
+      const item = {};
+      headers.forEach(function (header, index) {
+        item[header] = (values[index] || "").trim();
+      });
+      return item;
+    });
+  }
+
+  function loadMtrBusCsvFixed() {
+    return fetch("mtr_bus_stops.csv", { cache: "no-store" })
+      .then(function (response) {
+        if (!response.ok) throw new Error("CSV HTTP " + response.status);
+        return response.text();
+      })
+      .then(function (text) {
+        const rows = parseCSV(text);
+
+        if (typeof window.mtrBusStopRows !== "undefined") {
+          window.mtrBusStopRows.length = 0;
+          rows.forEach(function (row) {
+            window.mtrBusStopRows.push(row);
+          });
+        }
+
+        if (typeof window.mtrBusStopsByStationId !== "undefined") {
+          window.mtrBusStopsByStationId.clear();
+
+          rows.forEach(function (row) {
+            const id = String(
+              row.STATION_ID || row.station_id || ""
+            ).trim().toUpperCase();
+
+            if (!id) return;
+
+            if (!window.mtrBusStopsByStationId.has(id)) {
+              window.mtrBusStopsByStationId.set(id, []);
+            }
+
+            window.mtrBusStopsByStationId.get(id).push(row);
+          });
+        }
+
+        return rows;
+      })
+      .catch(function (error) {
+        console.warn("港鐵巴士 CSV 載入失敗:", error);
+        return [];
+      });
+  }
+
+  function patchClock() {
+    const update = function () {
+      const node = el("currentTime");
+      if (node) node.textContent = hkTime();
+    };
+
+    update();
+
+    if (window.__fixedClockTimer) {
+      clearInterval(window.__fixedClockTimer);
+    }
+
+    window.__fixedClockTimer = setInterval(update, 1000);
+  }
+
+  function patchRefreshCountdown() {
+    if (window.__fixedCountdownTimer) {
+      clearInterval(window.__fixedCountdownTimer);
+    }
+
+    const select = el("autoRefreshInterval");
+    const counter = el("refreshCountdown");
+    const interval = select ? parseInt(select.value, 10) : 30;
+
+    if (!interval || interval <= 0) {
+      if (counter) counter.textContent = "已關閉";
+      return;
+    }
+
+    let remaining = interval;
+
+    const render = function () {
+      if (counter) counter.textContent = remaining + "s";
+    };
+
+    render();
+
+    window.__fixedCountdownTimer = setInterval(function () {
+      remaining--;
+
+      if (remaining < 0) {
+        remaining = interval;
+      }
+
+      render();
+    }, 1000);
+  }
+
+  function patchAutoRefresh() {
+    if (window.__fixedRefreshTimer) {
+      clearInterval(window.__fixedRefreshTimer);
+    }
+
+    const select = el("autoRefreshInterval");
+    const interval = select ? parseInt(select.value, 10) : 30;
+
+    patchRefreshCountdown();
+
+    if (!interval || interval <= 0) return;
+
+    window.__fixedRefreshTimer = setInterval(function () {
+      if (typeof window.fetchETA === "function") {
+        try {
+          window.fetchETA();
+        } catch (error) {
+          console.error("刷新失敗:", error);
+        }
+      }
+
+      patchRefreshCountdown();
+    }, interval * 1000);
+  }
+
+  function patchSettings() {
+    const select = el("autoRefreshInterval");
+
+    if (select) {
+      select.addEventListener("change", function () {
+        try {
+          localStorage.setItem(
+            "hk_auto_refresh",
+            String(select.value)
+          );
+        } catch (error) {}
+
+        patchAutoRefresh();
+      });
+    }
+
+    const saved = localStorage.getItem("hk_auto_refresh");
+
+    if (saved && select) {
+      const optionExists = Array.from(select.options).some(function (option) {
+        return option.value === saved;
+      });
+
+      if (optionExists) {
+        select.value = saved;
+      }
+    }
+  }
+
+  function patchSafeRendering() {
+    const result = el("etaResult");
+
+    if (!result) return;
+
+    result.addEventListener("error", function (event) {
+      event.preventDefault();
+    }, true);
+  }
+
+  function initializeFixedPatch() {
+    if (window.__kindleFixedPatchLoaded) return;
+    window.__kindleFixedPatchLoaded = true;
+
+    patchClock();
+    patchSettings();
+    patchAutoRefresh();
+    patchSafeRendering();
+
+    loadMtrBusCsvFixed().then(function () {
+      if (typeof window.renderFavorites === "function") {
+        try {
+          window.renderFavorites();
+        } catch (error) {
+          console.warn("收藏清單載入失敗:", error);
+        }
+      }
+    });
+
+    const mode =
+      typeof window.currentMode === "string"
+        ? window.currentMode
+        : "lrt";
+
+    if (mode === "lrt" && typeof window.fetchETA === "function") {
+      setTimeout(function () {
+        try {
+          window.fetchETA();
+        } catch (error) {
+          console.warn("輕鐵初始化失敗:", error);
+        }
+      }, 300);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initializeFixedPatch,
+      { once: true }
+    );
+  } else {
+    initializeFixedPatch();
+  }
+})();
+    </script>
 </body>
 </html>
