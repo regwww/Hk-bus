@@ -1962,5 +1962,459 @@
             }, 400);
         }
     </script>
+    <!-- new add -->
+    <script>
+(function () {
+    "use strict";
+
+    function safeText(value) {
+        return value == null ? "" : String(value);
+    }
+
+    function htmlEscape(value) {
+        return safeText(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function getElement(id) {
+        return document.getElementById(id);
+    }
+
+    function setStatus(message, networkMessage) {
+        var result = getElement("etaResult");
+        var network = getElement("networkStatus");
+
+        if (result) result.textContent = message;
+        if (network && networkMessage) {
+            network.textContent = "狀態: " + networkMessage;
+        }
+    }
+
+    function fetchJson(url, options) {
+        return fetch(url, options || {}).then(function (response) {
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+            }
+            return response.json();
+        });
+    }
+
+    function refreshClockNow() {
+        var clock = getElement("currentTime");
+        if (!clock) return;
+
+        clock.textContent = new Intl.DateTimeFormat("zh-HK", {
+            timeZone: "Asia/Hong_Kong",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+        }).format(new Date());
+    }
+
+    function updateNetworkTime() {
+        var updated = getElement("lastUpdated");
+        var network = getElement("networkStatus");
+
+        if (updated) {
+            updated.textContent = new Intl.DateTimeFormat("zh-HK", {
+                timeZone: "Asia/Hong_Kong",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false
+            }).format(new Date());
+        }
+
+        if (network) network.textContent = "狀態: 正常";
+    }
+
+    function normalizeArray(value) {
+        if (Array.isArray(value)) return value;
+        if (value && typeof value === "object") return [value];
+        return [];
+    }
+
+    function getSelectedText(select) {
+        if (!select || !select.options || select.selectedIndex < 0) {
+            return "";
+        }
+        return select.options[select.selectedIndex].text;
+    }
+
+    function safeStorageGet(key, fallback) {
+        try {
+            return localStorage.getItem(key) || fallback;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function safeStorageSet(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            console.warn("localStorage unavailable:", e);
+        }
+    }
+
+    function patchKmbETA() {
+        window.getKmbETA = function () {
+            var routeEl = getElement("kmbRoute");
+            var stopEl = getElement("kmbStop");
+            var result = getElement("etaResult");
+            var location = getElement("displayLocationName");
+
+            var route = routeEl ? routeEl.value.trim().toUpperCase() : "";
+            var stopId = stopEl ? stopEl.value : "";
+
+            if (!route || !stopId) {
+                setStatus("請先選擇九巴路線及車站。", "未選擇");
+                return;
+            }
+
+            setStatus("連線中（正在取得九巴資料）...", "連線中");
+
+            var url =
+                "https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/" +
+                encodeURIComponent(stopId);
+
+            fetchJson(url)
+                .then(function (data) {
+                    var rows = Array.isArray(data && data.data) ? data.data : [];
+                    var filtered = rows.filter(function (item) {
+                        return safeText(item.route).toUpperCase() === route;
+                    });
+
+                    if (location) {
+                        location.textContent =
+                            "九巴 " + route + " - " + getSelectedText(stopEl);
+                    }
+
+                    if (!filtered.length) {
+                        setStatus(
+                            "目前此車站暫無路線 " + route + " 的預計班次。",
+                            "正常"
+                        );
+                        updateNetworkTime();
+                        return;
+                    }
+
+                    var html =
+                        "<div class='platform-header'>路線 " +
+                        htmlEscape(route) +
+                        " 到站時間</div>";
+
+                    filtered.forEach(function (item) {
+                        var destination =
+                            item.dest_tc || item.dest_en || "目的地未提供";
+                        var eta = "暫無資料";
+
+                        if (item.eta) {
+                            var etaDate = new Date(item.eta);
+                            if (!isNaN(etaDate.getTime())) {
+                                var minutes = Math.round(
+                                    (etaDate.getTime() - Date.now()) / 60000
+                                );
+                                eta = minutes <= 0 ? "即將抵達" : minutes + " 分鐘";
+                            }
+                        }
+
+                        if (!item.eta && item.rmk_tc) {
+                            eta = item.rmk_tc;
+                        }
+
+                        html +=
+                            "<div class='eta-item'>" +
+                            "<div class='eta-dest'>" +
+                            "<span class='badge'>" +
+                            htmlEscape(route) +
+                            "</span> 往 " +
+                            htmlEscape(destination) +
+                            "</div>" +
+                            "<div class='eta-time'>" +
+                            htmlEscape(eta) +
+                            "</div>" +
+                            "</div>";
+                    });
+
+                    if (result) result.innerHTML = html;
+                    updateNetworkTime();
+                })
+                .catch(function (error) {
+                    console.error("KMB API error:", error);
+                    setStatus(
+                        "獲取九巴數據失敗，請檢查網絡連線。",
+                        "連線失敗"
+                    );
+                });
+        };
+    }
+
+    function patchTrainETA() {
+        window.getTrainETA = function () {
+            var lineEl = getElement("trainLine");
+            var stationEl = getElement("trainStation");
+            var result = getElement("etaResult");
+            var location = getElement("displayLocationName");
+
+            var line = lineEl ? lineEl.value : "";
+            var station = stationEl ? stationEl.value : "";
+
+            if (!line || !station) {
+                setStatus("請先選擇港鐵車站。", "未選擇");
+                return;
+            }
+
+            setStatus("連線中（正在取得港鐵資料）...", "連線中");
+
+            var url =
+                "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php" +
+                "?line=" +
+                encodeURIComponent(line) +
+                "&sta=" +
+                encodeURIComponent(station);
+
+            fetchJson(url)
+                .then(function (data) {
+                    if (location) {
+                        location.textContent =
+                            "港鐵重鐵 - " + getSelectedText(stationEl);
+                    }
+
+                    var key = line + "-" + station;
+                    var trainData =
+                        data && data.status === 1 && data.data
+                            ? data.data[key]
+                            : null;
+
+                    if (!trainData) {
+                        setStatus(
+                            "暫無重鐵到站數據或服務時間已過。",
+                            "正常"
+                        );
+                        updateNetworkTime();
+                        return;
+                    }
+
+                    var html = "";
+                    var hasData = false;
+
+                    ["UP", "DOWN"].forEach(function (direction) {
+                        var trains = Array.isArray(trainData[direction])
+                            ? trainData[direction]
+                            : [];
+
+                        if (!trains.length) return;
+                        hasData = true;
+
+                        html +=
+                            "<div class='platform-header'>" +
+                            (direction === "UP" ? "上行" : "下行") +
+                            "</div>";
+
+                        trains.forEach(function (train) {
+                            var destination = safeText(
+                                train.dest || train.dest_en || train.dest_tc
+                            );
+                            var minutes = parseInt(train.ttnt, 10);
+                            var eta = isNaN(minutes)
+                                ? safeText(train.ttnt || "即將抵達")
+                                : minutes <= 0
+                                ? "即將抵達"
+                                : minutes + " 分鐘";
+
+                            var time = "";
+                            if (train.time) {
+                                var parts = safeText(train.time).split(" ");
+                                if (parts.length > 1) {
+                                    time = " (" + parts[1].substring(0, 5) + ")";
+                                }
+                            }
+
+                            html +=
+                                "<div class='eta-item'>" +
+                                "<div class='eta-dest'>" +
+                                "<span class='badge'>" +
+                                htmlEscape(line) +
+                                "</span> 往 " +
+                                htmlEscape(destination || "目的地未提供") +
+                                "</div>" +
+                                "<div class='eta-time'>" +
+                                htmlEscape(eta + time) +
+                                "</div>" +
+                                "</div>";
+                        });
+                    });
+
+                    if (!hasData) {
+                        setStatus("目前此車站暫無預計列車班次。", "正常");
+                    } else if (result) {
+                        result.innerHTML = html;
+                    }
+
+                    updateNetworkTime();
+                })
+                .catch(function (error) {
+                    console.error("MTR train API error:", error);
+                    setStatus(
+                        "獲取港鐵重鐵數據失敗，請檢查網絡連線。",
+                        "連線失敗"
+                    );
+                });
+        };
+    }
+
+    function patchRefreshTimer() {
+        window.resetRefreshTimer = function () {
+            if (window.refreshTimer) {
+                clearInterval(window.refreshTimer);
+                window.refreshTimer = null;
+            }
+
+            if (window.countdownTimer) {
+                clearInterval(window.countdownTimer);
+                window.countdownTimer = null;
+            }
+
+            var select = getElement("autoRefreshInterval");
+            var counter = getElement("refreshCountdown");
+            var seconds = select ? parseInt(select.value, 10) : 30;
+
+            if (!seconds || seconds <= 0) {
+                if (counter) counter.textContent = "已關閉";
+                return;
+            }
+
+            var remaining = seconds;
+
+            function render() {
+                if (counter) counter.textContent = remaining + "s";
+            }
+
+            render();
+
+            window.countdownTimer = setInterval(function () {
+                remaining -= 1;
+                if (remaining < 0) remaining = seconds;
+                render();
+            }, 1000);
+
+            window.refreshTimer = setInterval(function () {
+                if (typeof window.fetchETA === "function") {
+                    window.fetchETA();
+                }
+                remaining = seconds;
+                render();
+            }, seconds * 1000);
+        };
+    }
+
+    function patchFavorites() {
+        window.renderFavorites = function () {
+            var list = getElement("favoritesList");
+            var panel = getElement("favoritesPanelList");
+
+            var favorites = [];
+            try {
+                favorites = JSON.parse(
+                    safeStorageGet("hk_favorites", "[]")
+                );
+            } catch (e) {
+                favorites = [];
+            }
+
+            if (!Array.isArray(favorites) || !favorites.length) {
+                var empty =
+                    "<div class='status-msg'>尚未添加常用車站。</div>";
+                if (list) list.innerHTML = empty;
+                if (panel) panel.innerHTML = empty;
+                return;
+            }
+
+            var html = favorites
+                .map(function (favorite, index) {
+                    return (
+                        "<div class='fav-chip' data-fav-index='" +
+                        index +
+                        "'>" +
+                        htmlEscape(favorite.title || "未命名車站") +
+                        " <button type='button' data-remove-fav='" +
+                        index +
+                        "'>[×]</button></div>"
+                    );
+                })
+                .join("");
+
+            if (list) list.innerHTML = html;
+            if (panel) panel.innerHTML = html;
+
+            [list, panel].forEach(function (container) {
+                if (!container) return;
+
+                container.onclick = function (event) {
+                    var remove = event.target.closest("[data-remove-fav]");
+                    if (remove) {
+                        var removeIndex = parseInt(
+                            remove.getAttribute("data-remove-fav"),
+                            10
+                        );
+                        favorites.splice(removeIndex, 1);
+                        safeStorageSet(
+                            "hk_favorites",
+                            JSON.stringify(favorites)
+                        );
+                        window.renderFavorites();
+                        return;
+                    }
+
+                    var chip = event.target.closest("[data-fav-index]");
+                    if (!chip) return;
+
+                    var index = parseInt(
+                        chip.getAttribute("data-fav-index"),
+                        10
+                    );
+
+                    if (typeof window.selectFavorite === "function") {
+                        window.selectFavorite(index);
+                    }
+                };
+            });
+        };
+    }
+
+    function patchClock() {
+        refreshClockNow();
+        setInterval(refreshClockNow, 1000);
+    }
+
+    function initializePatches() {
+        patchKmbETA();
+        patchTrainETA();
+        patchRefreshTimer();
+        patchFavorites();
+        patchClock();
+
+        if (typeof window.renderFavorites === "function") {
+            window.renderFavorites();
+        }
+
+        if (typeof window.resetRefreshTimer === "function") {
+            window.resetRefreshTimer();
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initializePatches);
+    } else {
+        initializePatches();
+    }
+})();
+</script>
 </body>
 </html>
