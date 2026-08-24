@@ -2729,7 +2729,7 @@
     <!--p3-->
     
   <script>
-(function () {
+function () {
   function update() {
     var box = document.getElementById("diagnostic-test-box");
     if (!box) return;
@@ -2743,8 +2743,22 @@
 
   setInterval(update, 1000);
   update();
-})();
+}();
   </script>
+    <div style="
+  position:fixed;
+  z-index:999999;
+  left:0;
+  right:0;
+  bottom:0;
+  padding:20px;
+  background:red;
+  color:white;
+  font-size:24px;
+  font-weight:bold;
+">
+  HTML 修改已生效
+    </div>
 
   
     
