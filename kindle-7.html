@@ -2755,6 +2755,82 @@
 }());  
     
 </script> -->
+ <!--p5-->
+    <script>
+(function () {
+  var box = document.createElement("div");
 
+  box.id = "simple-diagnostic-box";
+  box.style.cssText =
+    "position:fixed;" +
+    "left:0;" +
+    "right:0;" +
+    "bottom:0;" +
+    "z-index:2147483647;" +
+    "padding:12px;" +
+    "background:#000;" +
+    "color:#fff;" +
+    "border:3px solid #fff;" +
+    "font:16px monospace;" +
+    "white-space:pre-wrap;";
+
+  function refresh() {
+    var mode = "未知";
+    var csv = "未知";
+    var refresh = "未知";
+
+    try {
+      if (typeof currentMode !== "undefined") {
+        mode = currentMode;
+      }
+    } catch (e) {}
+
+    try {
+      if (
+        typeof mtrBusStopRows !== "undefined" &&
+        mtrBusStopRows
+      ) {
+        csv = mtrBusStopRows.length + " 筆";
+      }
+    } catch (e) {}
+
+    var refreshSelect =
+      document.getElementById("autoRefreshInterval");
+
+    if (refreshSelect) {
+      refresh = refreshSelect.value + " 秒";
+    }
+
+    box.textContent =
+      "診斷簡化版正常
+" +
+      "時間：" +
+      new Date().toLocaleTimeString("zh-HK") +
+      "
+模式：" +
+      mode +
+      "
+CSV：" +
+      csv +
+      "
+自動刷新：" +
+      refresh;
+  }
+
+  function start() {
+    if (!document.body) return;
+
+    document.body.appendChild(box);
+    refresh();
+    setInterval(refresh, 1000);
+  }
+
+  if (document.body) {
+    start();
+  } else {
+    setTimeout(start, 0);
+  }
+})();
+    </script>
 </body>
 </html>
