@@ -404,12 +404,24 @@
         <!-- 常用車站 -->
         
         <div id="panel-favorites" style="display:none;">
-    <div class="header-title">常用車站</div>
-    <div id="favoritesPanelList">
-        <div class="status-msg">
-            尚未添加常用車站。
-        </div>
+    <div id="favoritesCard" class="card" style="display:none">
+  <div class="header-title">
+    常用車站
+    <span id="favoritesCount">0 個</span>
+  </div>
+
+  <div id="favoritesCardList" class="favorites-list">
+    <div class="status-msg">
+      尚未添加常用車站。
     </div>
+  </div>
+
+  <button
+    type="button"
+    id="clearFavoritesButton">
+    清除全部常用車站
+  </button>
+</div>
     </div>
 
         <!-- 操作按鈕列 -->
@@ -2825,5 +2837,186 @@
   }
 })();
     </script>
+
+
+<!--add fav card-->
+<script>
+(function () {
+  var key = "hk_favorites";
+  var card;
+  var list;
+  var count;
+  var clearButton;
+
+  function readList() {
+    var value;
+
+    try {
+      value = localStorage.getItem(key);
+
+      if (!value) {
+        return [];
+      }
+
+      value = JSON.parse(value);
+
+      if (Array.isArray(value)) {
+        return value;
+      }
+    } catch (error) {
+      console.log("讀取常用車站失敗");
+    }
+
+    return [];
+  }
+
+  function getName(item) {
+    if (!item) {
+      return "未命名車站";
+    }
+
+    return item.name ||
+      item.stationName ||
+      item.stopName ||
+      item.kmbStopNameEN ||
+      item.mtrStop ||
+      item.lrtStation ||
+      "未命名車站";
+  }
+
+  function showCard() {
+    var items;
+    var i;
+    var button;
+    var name;
+    var mode;
+
+    card = document.getElementById("favoritesCard");
+    list = document.getElementById("favoritesCardList");
+    count = document.getElementById("favoritesCount");
+    clearButton =
+      document.getElementById("clearFavoritesButton");
+
+    if (!card || !list || !count) {
+      return;
+    }
+
+    card.style.display = "block";
+    items = readList();
+
+    count.textContent = items.length + " 個";
+    list.textContent = "";
+
+    if (!items.length) {
+      list.textContent = "尚未添加常用車站。";
+      return;
+    }
+
+    for (i = 0; i < items.length; i++) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.className = "fav-chip";
+      button.setAttribute("data-index", i);
+
+      name = getName(items[i]);
+      mode = items[i].mode || items[i].type || "";
+
+      button.textContent =
+        (mode ? "[" + mode + "] " : "") + name;
+
+      list.appendChild(button);
+    }
+
+    list.onclick = function (event) {
+      var target;
+      var index;
+      var selected;
+
+      target = event.target;
+
+      if (!target ||
+          !target.getAttribute("data-index")) {
+        return;
+      }
+
+      index = parseInt(
+        target.getAttribute("data-index"),
+        10
+      );
+
+      selected = items[index];
+
+      if (!selected) {
+        return;
+      }
+
+      if (typeof applyFavorite === "function") {
+        applyFavorite(selected);
+      }
+    };
+  }
+
+  function hideCardWhenLeavingFavorites() {
+    var originalSwitchMode;
+
+    if (typeof window.switchMode !== "function") {
+      return;
+    }
+
+    originalSwitchMode = window.switchMode;
+
+    window.switchMode = function (mode) {
+      originalSwitchMode(mode);
+
+      card = document.getElementById("favoritesCard");
+
+      if (card) {
+        card.style.display =
+          mode === "favorites" ? "block" : "none";
+      }
+
+      if (mode === "favorites") {
+        showCard();
+      }
+    };
+  }
+
+  function start() {
+    showCard();
+
+    clearButton =
+      document.getElementById("clearFavoritesButton");
+
+    if (clearButton) {
+      clearButton.onclick = function () {
+        if (!window.confirm(
+          "確定清除全部常用車站？"
+        )) {
+          return;
+        }
+
+        localStorage.removeItem(key);
+        showCard();
+
+        if (typeof renderFavorites === "function") {
+          renderFavorites();
+        }
+      };
+    }
+
+    hideCardWhenLeavingFavorites();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      start
+    );
+  } else {
+    start();
+  }
+}());
+</script>
+
 </body>
 </html>
