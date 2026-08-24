@@ -2730,35 +2730,113 @@
 <script>
 (function () {
   var box;
-  var now;
+  var title;
+  var body;
+  var button;
+  var timer;
 
   box = document.createElement("div");
-  box.id = "diag-simple-20260824";
+  box.id = "kindle-diagnostic-panel";
 
   box.style.position = "fixed";
-  box.style.left = "0";
-  box.style.right = "0";
-  box.style.bottom = "0";
+  box.style.left = "8px";
+  box.style.right = "8px";
+  box.style.bottom = "8px";
   box.style.zIndex = "2147483647";
-  box.style.padding = "20px";
-  box.style.backgroundColor = "red";
-  box.style.color = "white";
-  box.style.fontSize = "24px";
+  box.style.backgroundColor = "#ffffff";
+  box.style.color = "#000000";
+  box.style.border = "3px solid #000000";
+  box.style.padding = "10px";
   box.style.fontFamily = "monospace";
+  box.style.fontSize = "14px";
   box.style.fontWeight = "bold";
-  box.style.display = "block";
-  box.style.visibility = "visible";
-  box.style.opacity = "1";
 
-  now = new Date();
+  title = document.createElement("div");
+  title.textContent = "系統診斷";
 
-  box.appendChild(
-    document.createTextNode(
-      "診斷簡化版成功 - " + now.toLocaleTimeString()
-    )
-  );
+  button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "隱藏";
+  button.style.width = "auto";
+  button.style.padding = "4px 10px";
+  button.style.margin = "0 0 0 10px";
+
+  title.appendChild(button);
+  box.appendChild(title);
+
+  body = document.createElement("pre");
+  body.style.whiteSpace = "pre-wrap";
+  body.style.margin = "8px 0 0 0";
+  body.style.fontFamily = "monospace";
+  body.style.fontSize = "13px";
+  box.appendChild(body);
+
+  function getValue(id) {
+    var node = document.getElementById(id);
+    if (!node) return "找不到 #" + id;
+    if (node.value !== undefined) return node.value;
+    return node.textContent || "存在";
+  }
+
+  function update() {
+    var rows;
+    var mode;
+    var csv;
+    var refresh;
+    var url;
+
+    try {
+      rows = typeof mtrBusStopRows !== "undefined"
+        ? mtrBusStopRows.length
+        : "未建立";
+    } catch (error) {
+      rows = "不可讀取";
+    }
+
+    try {
+      mode = typeof currentMode !== "undefined"
+        ? currentMode
+        : "未建立";
+    } catch (error) {
+      mode = "不可讀取";
+    }
+
+    csv = rows;
+    refresh = getValue("autoRefreshInterval");
+    url = window.location.href;
+
+    body.textContent =
+      "狀態：正常
+" +
+      "時間：" + new Date().toLocaleTimeString("zh-HK") + "
+" +
+      "網址：" + url + "
+" +
+      "目前模式：" + mode + "
+" +
+      "CSV 資料：" + csv + "
+" +
+      "自動刷新：" + refresh + "
+" +
+      "ETA 狀態：" + getValue("networkStatus") + "
+" +
+      "最後更新：" + getValue("lastUpdated");
+  }
+
+  button.onclick = function () {
+    if (body.style.display === "none") {
+      body.style.display = "block";
+      button.textContent = "隱藏";
+    } else {
+      body.style.display = "none";
+      button.textContent = "顯示";
+    }
+  };
 
   document.body.appendChild(box);
+  update();
+
+  timer = window.setInterval(update, 1000);
 }());
 </script>
 
