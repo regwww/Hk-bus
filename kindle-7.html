@@ -3010,5 +3010,39 @@
   }
 })();
     </script>
+
+    <script>
+(function () {
+  var box = document.createElement("div");
+
+  box.id = "diagnostic-test-box";
+  box.textContent = "診斷測試成功：Script 正常執行";
+
+  box.style.cssText = [
+    "position:fixed",
+    "left:10px",
+    "right:10px",
+    "bottom:10px",
+    "z-index:2147483647",
+    "padding:12px",
+    "background:#000",
+    "color:#fff",
+    "border:3px solid #fff",
+    "font:16px monospace",
+    "display:block"
+  ].join(";");
+
+  function show() {
+    if (!document.body) return;
+    document.body.appendChild(box);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", show);
+  } else {
+    show();
+  }
+})();
+    </script>
 </body>
 </html>
