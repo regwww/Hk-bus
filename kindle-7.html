@@ -2730,113 +2730,63 @@
 <script>
 (function () {
   var box;
-  var title;
-  var body;
-  var button;
+  var text;
   var timer;
 
-  box = document.createElement("div");
-  box.id = "kindle-diagnostic-panel";
+  function showBox() {
+    box = document.createElement("div");
 
-  box.style.position = "fixed";
-  box.style.left = "8px";
-  box.style.right = "8px";
-  box.style.bottom = "8px";
-  box.style.zIndex = "2147483647";
-  box.style.backgroundColor = "#ffffff";
-  box.style.color = "#000000";
-  box.style.border = "3px solid #000000";
-  box.style.padding = "10px";
-  box.style.fontFamily = "monospace";
-  box.style.fontSize = "14px";
-  box.style.fontWeight = "bold";
+    box.id = "diagnostic-20260824";
 
-  title = document.createElement("div");
-  title.textContent = "系統診斷";
+    box.setAttribute(
+      "style",
+      "position:fixed;" +
+      "left:0;" +
+      "right:0;" +
+      "bottom:0;" +
+      "z-index:2147483647;" +
+      "display:block;" +
+      "visibility:visible;" +
+      "opacity:1;" +
+      "background:#000;" +
+      "color:#fff;" +
+      "border:3px solid #fff;" +
+      "padding:12px;" +
+      "font-family:monospace;" +
+      "font-size:16px;" +
+      "font-weight:bold;" +
+      "white-space:pre-wrap;"
+    );
 
-  button = document.createElement("button");
-  button.type = "button";
-  button.textContent = "隱藏";
-  button.style.width = "auto";
-  button.style.padding = "4px 10px";
-  button.style.margin = "0 0 0 10px";
+    document.body.appendChild(box);
 
-  title.appendChild(button);
-  box.appendChild(title);
+    updateBox();
 
-  body = document.createElement("pre");
-  body.style.whiteSpace = "pre-wrap";
-  body.style.margin = "8px 0 0 0";
-  body.style.fontFamily = "monospace";
-  body.style.fontSize = "13px";
-  box.appendChild(body);
-
-  function getValue(id) {
-    var node = document.getElementById(id);
-    if (!node) return "找不到 #" + id;
-    if (node.value !== undefined) return node.value;
-    return node.textContent || "存在";
+    timer = window.setInterval(updateBox, 1000);
   }
 
-  function update() {
-    var rows;
-    var mode;
-    var csv;
-    var refresh;
-    var url;
+  function updateBox() {
+    var timeText;
 
-    try {
-      rows = typeof mtrBusStopRows !== "undefined"
-        ? mtrBusStopRows.length
-        : "未建立";
-    } catch (error) {
-      rows = "不可讀取";
-    }
+    if (!box) return;
 
-    try {
-      mode = typeof currentMode !== "undefined"
-        ? currentMode
-        : "未建立";
-    } catch (error) {
-      mode = "不可讀取";
-    }
+    timeText = new Date().toLocaleTimeString("zh-HK");
 
-    csv = rows;
-    refresh = getValue("autoRefreshInterval");
-    url = window.location.href;
+    text =
+      "診斷版本 20260824-1937
+" +
+      "JavaScript 正常執行
+" +
+      "時間：" + timeText;
 
-    body.textContent =
-      "狀態：正常
-" +
-      "時間：" + new Date().toLocaleTimeString("zh-HK") + "
-" +
-      "網址：" + url + "
-" +
-      "目前模式：" + mode + "
-" +
-      "CSV 資料：" + csv + "
-" +
-      "自動刷新：" + refresh + "
-" +
-      "ETA 狀態：" + getValue("networkStatus") + "
-" +
-      "最後更新：" + getValue("lastUpdated");
+    box.textContent = text;
   }
 
-  button.onclick = function () {
-    if (body.style.display === "none") {
-      body.style.display = "block";
-      button.textContent = "隱藏";
-    } else {
-      body.style.display = "none";
-      button.textContent = "顯示";
-    }
-  };
-
-  document.body.appendChild(box);
-  update();
-
-  timer = window.setInterval(update, 1000);
+  if (document.body) {
+    showBox();
+  } else {
+    window.setTimeout(showBox, 100);
+  }
 }());
 </script>
 
