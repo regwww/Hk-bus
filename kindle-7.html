@@ -2730,63 +2730,35 @@
 <script>
 (function () {
   var box;
-  var text;
-  var timer;
+  var now;
 
-  function showBox() {
-    box = document.createElement("div");
+  box = document.createElement("div");
+  box.id = "diag-simple-20260824";
 
-    box.id = "diagnostic-20260824";
+  box.style.position = "fixed";
+  box.style.left = "0";
+  box.style.right = "0";
+  box.style.bottom = "0";
+  box.style.zIndex = "2147483647";
+  box.style.padding = "20px";
+  box.style.backgroundColor = "red";
+  box.style.color = "white";
+  box.style.fontSize = "24px";
+  box.style.fontFamily = "monospace";
+  box.style.fontWeight = "bold";
+  box.style.display = "block";
+  box.style.visibility = "visible";
+  box.style.opacity = "1";
 
-    box.setAttribute(
-      "style",
-      "position:fixed;" +
-      "left:0;" +
-      "right:0;" +
-      "bottom:0;" +
-      "z-index:2147483647;" +
-      "display:block;" +
-      "visibility:visible;" +
-      "opacity:1;" +
-      "background:#000;" +
-      "color:#fff;" +
-      "border:3px solid #fff;" +
-      "padding:12px;" +
-      "font-family:monospace;" +
-      "font-size:16px;" +
-      "font-weight:bold;" +
-      "white-space:pre-wrap;"
-    );
+  now = new Date();
 
-    document.body.appendChild(box);
+  box.appendChild(
+    document.createTextNode(
+      "診斷簡化版成功 - " + now.toLocaleTimeString()
+    )
+  );
 
-    updateBox();
-
-    timer = window.setInterval(updateBox, 1000);
-  }
-
-  function updateBox() {
-    var timeText;
-
-    if (!box) return;
-
-    timeText = new Date().toLocaleTimeString("zh-HK");
-
-    text =
-      "診斷版本 20260824-1937
-" +
-      "JavaScript 正常執行
-" +
-      "時間：" + timeText;
-
-    box.textContent = text;
-  }
-
-  if (document.body) {
-    showBox();
-  } else {
-    window.setTimeout(showBox, 100);
-  }
+  document.body.appendChild(box);
 }());
 </script>
 
