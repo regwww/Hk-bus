@@ -2729,40 +2729,25 @@
     <!--p3-->
     
   <script>
-function () {
-  function update() {
-    var box = document.getElementById("diagnostic-test-box");
-    if (!box) return;
+document.addEventListener("DOMContentLoaded", function () {
+  var message = document.createElement("div");
 
-    box.textContent =
-      "診斷正常 | " +
-      new Date().toLocaleTimeString("zh-HK") +
-      " | URL: " +
-      location.hostname;
-  }
+  message.textContent = "JavaScript 診斷成功";
 
-  setInterval(update, 1000);
-  update();
-}();
+  message.style.position = "fixed";
+  message.style.left = "0";
+  message.style.right = "0";
+  message.style.bottom = "0";
+  message.style.zIndex = "999999";
+  message.style.padding = "20px";
+  message.style.backgroundColor = "red";
+  message.style.color = "white";
+  message.style.fontSize = "24px";
+  message.style.fontWeight = "bold";
+
+  document.body.appendChild(message);
+});
   </script>
-    <div style="
-  position:fixed;
-  z-index:999999;
-  left:0;
-  right:0;
-  bottom:0;
-  padding:20px;
-  background:red;
-  color:white;
-  font-size:24px;
-  font-weight:bold;
-">
-  HTML 修改已生效
-    </div>
-
-  
-    
-
     
 
   
