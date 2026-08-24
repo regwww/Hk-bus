@@ -2868,5 +2868,147 @@
   }
 })();
     </script>
+    <!--p4-->
+    <script>
+(function () {
+  "use strict";
+
+  function createDiagnosticsPanel() {
+    if (document.getElementById("diagnosticsPanel")) return;
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.id = "diagnosticsPanel";
+
+    card.innerHTML = `
+      <div class="header-title">
+        系統診斷
+        <span id="diagnosticToggle"
+              style="font-size:0.8em;cursor:pointer">
+          顯示
+        </span>
+      </div>
+      <div id="diagnosticBody"
+           style="display:none;white-space:pre-line;font-size:0.85em">
+        初始化中...
+      </div>
+    `;
+
+    document.body.appendChild(card);
+
+    document
+      .getElementById("diagnosticToggle")
+      .addEventListener("click", function () {
+        const body = document.getElementById("diagnosticBody");
+        const toggle = document.getElementById("diagnosticToggle");
+
+        if (body.style.display === "none") {
+          body.style.display = "block";
+          toggle.textContent = "隱藏";
+          updateDiagnostics();
+        } else {
+          body.style.display = "none";
+          toggle.textContent = "顯示";
+        }
+      });
+  }
+
+  function updateDiagnostics(extraMessage) {
+    const body = document.getElementById("diagnosticBody");
+    if (!body) return;
+
+    const csvRows =
+      typeof window.mtrBusStopRows !== "undefined"
+        ? window.mtrBusStopRows.length
+        : "未建立";
+
+    const currentMode =
+      typeof window.currentMode !== "undefined"
+        ? window.currentMode
+        : "未知";
+
+    const refreshSelect =
+      document.getElementById("autoRefreshInterval");
+
+    const refreshValue = refreshSelect
+      ? refreshSelect.value + " 秒"
+      : "未知";
+
+    const pageUrl = window.location.href;
+    const isGithubPages =
+      pageUrl.indexOf("github.io") !== -1;
+
+    const lastUpdated =
+      document.getElementById("lastUpdated");
+
+    const networkStatus =
+      document.getElementById("networkStatus");
+
+    const lines = [
+      "版本：診斷面板 1.0",
+      "平台：" + (isGithubPages ? "GitHub Pages" : "其他網站或本機"),
+      "目前模式：" + currentMode,
+      "CSV 車站資料：" + csvRows + " 筆",
+      "自動刷新：" + refreshValue,
+      "最後更新：" +
+        (lastUpdated ? lastUpdated.textContent : "未知"),
+      "網絡狀態：" +
+        (networkStatus ? networkStatus.textContent : "未知")
+    ];
+
+    if (extraMessage) {
+      lines.push("");
+      lines.push("最近事件：" + extraMessage);
+    }
+
+    body.textContent = lines.join("
+");
+  }
+
+  function monitorFetch() {
+    if (window.__diagnosticFetchPatched) return;
+    window.__diagnosticFetchPatched = true;
+
+    const originalFetch = window.fetch;
+
+    window.fetch = function () {
+      return originalFetch.apply(this, arguments)
+        .then(function (response) {
+          updateDiagnostics(
+            "API " +
+            response.status +
+            " " +
+            (response.ok ? "成功" : "失敗")
+          );
+          return response;
+        })
+        .catch(function (error) {
+          updateDiagnostics(
+            "API 錯誤：" + error.message
+          );
+          throw error;
+        });
+    };
+  }
+
+  function start() {
+    createDiagnosticsPanel();
+    monitorFetch();
+    updateDiagnostics();
+
+    setInterval(function () {
+      updateDiagnostics();
+    }, 5000);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, {
+      once: true
+    });
+  } else {
+    start();
+  }
+})();
+    </script>
 </body>
 </html>
