@@ -2261,10 +2261,7 @@
                 })
                 .catch(function (error) {
                     console.error("MTR train API error:", error);
-                    setStatus(
-                        "獲取港鐵重鐵數據失敗，請檢查網絡連線。",
-                        "連線失敗"
-                    );
+                    setStatus("獲取港鐵重鐵數據失敗，請檢查網絡連線。","連線失敗");
                 });
         };
     }
@@ -2489,12 +2486,8 @@
       } else if (ch === "," && !quoted) {
         row.push(cell);
         cell = "";
-      } else if ((ch === "
-" || ch === "
-") && !quoted) {
-        if (ch === "
-" && next === "
-") i++;
+      } else if ((ch === "" || ch === "") && !quoted) {
+        if (ch === "" && next === "") i++;
         row.push(cell);
         if (row.some(function (v) { return v.trim() !== ""; })) {
           rows.push(row);
