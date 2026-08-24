@@ -2729,79 +2729,37 @@
     <!--p3-->
 <script>
 (function () {
-  var box = document.createElement("div");
+  var box;
+  var now;
 
-  box.id = "simple-diagnostic-box";
-  box.style.cssText =
-    "position:fixed;" +
-    "left:0;" +
-    "right:0;" +
-    "bottom:0;" +
-    "z-index:2147483647;" +
-    "padding:12px;" +
-    "background:#000;" +
-    "color:#fff;" +
-    "border:3px solid #fff;" +
-    "font:16px monospace;" +
-    "white-space:pre-wrap;";
+  box = document.createElement("div");
+  box.id = "diag-simple-20260824";
 
-  function refresh() {
-    var mode = "未知";
-    var csv = "未知";
-    var refresh = "未知";
+  box.style.position = "fixed";
+  box.style.left = "0";
+  box.style.right = "0";
+  box.style.bottom = "0";
+  box.style.zIndex = "2147483647";
+  box.style.padding = "20px";
+  box.style.backgroundColor = "red";
+  box.style.color = "white";
+  box.style.fontSize = "24px";
+  box.style.fontFamily = "monospace";
+  box.style.fontWeight = "bold";
+  box.style.display = "block";
+  box.style.visibility = "visible";
+  box.style.opacity = "1";
 
-    try {
-      if (typeof currentMode !== "undefined") {
-        mode = currentMode;
-      }
-    } catch (e) {}
+  now = new Date();
 
-    try {
-      if (
-        typeof mtrBusStopRows !== "undefined" &&
-        mtrBusStopRows
-      ) {
-        csv = mtrBusStopRows.length + " 筆";
-      }
-    } catch (e) {}
+  box.appendChild(
+    document.createTextNode(
+      "診斷簡化版成功 - " + now.toLocaleTimeString()
+    )
+  );
 
-    var refreshSelect =
-      document.getElementById("autoRefreshInterval");
-
-    if (refreshSelect) {
-      refresh = refreshSelect.value + " 秒";
-    }
-
-    box.textContent =
-      "診斷簡化版正常
-" +
-      "時間：" +
-      new Date().toLocaleTimeString("zh-HK") +
-      "
-模式：" +
-      mode +
-      "
-CSV：" +
-      csv +
-      "
-自動刷新：" +
-      refresh;
-  }
-
-  function start() {
-    if (!document.body) return;
-
-    document.body.appendChild(box);
-    refresh();
-    setInterval(refresh, 1000);
-  }
-
-  if (document.body) {
-    start();
-  } else {
-    setTimeout(start, 0);
-  }
-})();
+  document.body.appendChild(box);
+}());
 </script>
 
 </body>
