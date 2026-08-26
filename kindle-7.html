@@ -252,7 +252,7 @@
             <button class="tab-btn" id="tab-mtrbus" onclick="switchMode('mtrbus')">港鐵巴士</button>
             <button class="tab-btn" id="tab-kmb" onclick="switchMode('kmb')">九巴 KMB</button>
             <button class="tab-btn" id="tab-train" onclick="switchMode('train')">港鐵 MTR</button>
-            <button class="tab-btn" id="tab-favorites" type="button" onclick="switchMode('favorites')">常用車站</button>
+            <button class="tab-btn" id="tab-favorites" type="button" onclick="switchMode('favorites'); var card=document.getElementById('favoritesCard'); if(card){card.style.display='block';}">常用車站</button>
         </div>
 
         <!-- 1. 輕鐵選單 (預設景峰站 330) -->
@@ -411,8 +411,14 @@
   </div>
 
   <div id="favoritesCardList" class="favorites-list">
-    <div class="status-msg">
-      尚未添加常用車站。
+    尚未添加常用車站。
+  </div>
+
+  <button
+    type="button"
+    id="clearFavoritesButton">
+    清除全部常用車站
+  </button>
     </div>
   </div>
 
@@ -2961,30 +2967,7 @@
     };
   }
 
-  function hideCardWhenLeavingFavorites() {
-    var originalSwitchMode;
-
-    if (typeof window.switchMode !== "function") {
-      return;
-    }
-
-    originalSwitchMode = window.switchMode;
-
-    window.switchMode = function (mode) {
-      originalSwitchMode(mode);
-
-      card = document.getElementById("favoritesCard");
-
-      if (card) {
-        card.style.display =
-          mode === "favorites" ? "block" : "none";
-      }
-
-      if (mode === "favorites") {
-        showCard();
-      }
-    };
-  }
+  
 
   function start() {
     showCard();
@@ -3009,7 +2992,7 @@
       };
     }
 
-    hideCardWhenLeavingFavorites();
+
   }
 
   if (document.readyState === "loading") {
