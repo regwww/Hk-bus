@@ -2897,10 +2897,13 @@
     clearButton =
       document.getElementById("clearFavoritesButton");
 
-    if (card === null ||
-      list === null ||
-      count === null) {
-    return;
+    if (card !== null) {
+  if (mode === "favorites") {
+    card.style.display = "block";
+  } else {
+    card.style.display = "none";
+  }
+    }
   }
 
     card.style.display = "block";
